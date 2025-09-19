@@ -49,7 +49,15 @@ spec:
             - name: APP_URL
               value: {{ .Values.bookstack.appUrl | quote }}
             - name: APP_KEY
+              {{- $useSecret := or .Values.bookstack.appKeySecret (and .Values.bookstack.createAppKeySecret .Values.bookstack.appKey) }}
+              {{- if $useSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bookstack.appKeySecretName" . }}
+                  key: {{ .Values.bookstack.appKeySecretKey }}
+              {{- else }}
               value: {{ include "bookstack.appKey" . | quote }}
+              {{- end }}
             - name: DB_HOST
               value: {{ .Values.database.host | quote }}
             - name: DB_PORT
@@ -59,17 +67,21 @@ spec:
             - name: DB_USERNAME
               value: {{ .Values.database.username | quote }}
             - name: DB_PASSWORD
-              {{- if .Values.database.existingSecret }}
+              {{- if or .Values.database.existingSecret (include "bookstack.createDbSecret" .) }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.database.existingSecret }}
-                  key: {{ .Values.database.existingSecretKey }}
+                  name: {{ include "bookstack.dbSecretName" . }}
+                  key: {{ .Values.database.existingSecretKey | default "password" }}
               {{- else }}
               value: {{ .Values.database.password | quote }}
               {{- end }}
             {{- with .Values.bookstack.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.bookstack.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: /config

@@ -34,13 +34,35 @@ A Helm chart for deploying BookStack - a simple, self-hosted, easy-to-use wiki p
    ```yaml
    bookstack:
      appKey: "base64:YOUR_GENERATED_KEY_HERE"
+     # OR use a secret (recommended):
+     # appKeySecret: "bookstack-app-key-secret"
+     # createAppKeySecret: true
      appUrl: "https://bookstack.yourdomain.com"
+     
+     # Environment variables from secrets/configmaps
+     extraEnvFrom:
+       - secretRef:
+           name: bookstack-extra-secrets
+       - configMapRef:
+           name: bookstack-config
+     
+     # Individual environment variables (can reference secrets)
+     extraEnv:
+       - name: MAIL_HOST
+         valueFrom:
+           secretKeyRef:
+             name: mail-secret
+             key: smtp-host
    
    database:
      host: "mysql.example.com"
      name: "bookstack"
      username: "bookstack"
-     password: "your_secure_password"
+     # Option 1: Use existing secret
+     existingSecret: "bookstack-db-secret"
+     existingSecretKey: "password"
+     # Option 2: Let chart create secret
+     # password: "your_secure_password"
    
    ingress:
      hosts:
@@ -66,11 +88,16 @@ A Helm chart for deploying BookStack - a simple, self-hosted, easy-to-use wiki p
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `bookstack.appKey` | Unique application key (required) | `""` |
+| `bookstack.appKeySecret` | Existing secret containing APP_KEY | `""` |
+| `bookstack.createAppKeySecret` | Create secret for APP_KEY | `false` |
 | `bookstack.appUrl` | Base URL for BookStack | `"https://bookstack.example.com"` |
+| `bookstack.extraEnv` | Additional environment variables | `[]` |
+| `bookstack.extraEnvFrom` | Environment variables from secrets/configmaps | `[]` |
 | `database.host` | Database host | `"mysql.example.com"` |
 | `database.name` | Database name | `"bookstack"` |
 | `database.username` | Database username | `"bookstack"` |
 | `database.password` | Database password | `"changeme"` |
+| `database.existingSecret` | Existing secret for DB password | `""` |
 | `persistence.size` | Storage size for files | `"8Gi"` |
 | `ingress.enabled` | Enable ingress | `true` |
 | `ingress.className` | Ingress class name | `"traefik"` |
@@ -90,6 +117,68 @@ The chart creates a PersistentVolumeClaim for BookStack's file storage which inc
 - Themes and customizations  
 - Backups
 - Cache and session data
+
+### Secrets Management
+
+The chart provides multiple ways to handle sensitive data:
+
+#### 1. APP_KEY Management
+```yaml
+# Option 1: Direct value (not recommended for production)
+bookstack:
+  appKey: "base64:your-generated-key"
+
+# Option 2: Reference existing secret
+bookstack:
+  appKeySecret: "my-bookstack-secrets"
+  appKeySecretKey: "app-key"
+
+# Option 3: Auto-create secret from value
+bookstack:
+  appKey: "base64:your-generated-key"
+  createAppKeySecret: true  # Creates secret, removes plain value from env
+```
+
+#### 2. Database Password Management
+```yaml
+# Option 1: Reference existing secret (recommended)
+database:
+  existingSecret: "bookstack-db-secret"
+  existingSecretKey: "password"
+
+# Option 2: Auto-create secret from value
+database:
+  password: "your-db-password"  # Chart auto-creates secret
+
+# Option 3: Plain value (not recommended for production)
+database:
+  password: "your-db-password"
+  existingSecret: ""  # Explicitly disable secret usage
+```
+
+#### 3. Additional Environment Variables
+```yaml
+bookstack:
+  # Load entire secrets/configmaps as environment variables
+  extraEnvFrom:
+    - secretRef:
+        name: bookstack-mail-config
+    - configMapRef:
+        name: bookstack-app-config
+  
+  # Individual environment variables with secret references
+  extraEnv:
+    - name: MAIL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mail-credentials
+          key: password
+    - name: LDAP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ldap-credentials
+          key: bind-password
+```
 
 ### Ingress and SSL
 

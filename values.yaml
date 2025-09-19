@@ -20,6 +20,13 @@ bookstack:
   # Keep the "base64:" prefix
   appKey: ""
   
+  # Alternatively, use existing secret for APP_KEY
+  appKeySecret: ""
+  appKeySecretKey: "app-key"
+  
+  # Set to true to automatically create a secret for APP_KEY (requires appKey to be set)
+  createAppKeySecret: false
+  
   # APP_URL - The base URL for BookStack
   appUrl: "https://bookstack.example.com"
   
@@ -34,6 +41,13 @@ bookstack:
   extraEnv: []
     # - name: CUSTOM_VAR
     #   value: "custom_value"
+  
+  # Environment variables from secrets
+  extraEnvFrom: []
+    # - secretRef:
+    #     name: bookstack-secrets
+    # - configMapRef:
+    #     name: bookstack-config
 
 # External database configuration
 database:

@@ -71,3 +71,49 @@ Generate the APP_KEY if not provided
 {{- "base64:GENERATE_YOUR_OWN_APP_KEY_USING_DOCKER_RUN" }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create secret for database password if not using existing secret
+*/}}
+{{- define "bookstack.createDbSecret" -}}
+{{- if and (not .Values.database.existingSecret) .Values.database.password }}
+{{- true }}
+{{- else }}
+{{- false }}
+{{- end }}
+{{- end }}
+
+{{/*
+Get database secret name
+*/}}
+{{- define "bookstack.dbSecretName" -}}
+{{- if .Values.database.existingSecret }}
+{{- .Values.database.existingSecret }}
+{{- else }}
+{{- printf "%s-db-secret" (include "bookstack.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create secret for APP_KEY if requested
+*/}}
+{{- define "bookstack.createAppKeySecret" -}}
+{{- if and .Values.bookstack.createAppKeySecret .Values.bookstack.appKey (not .Values.bookstack.appKeySecret) }}
+{{- true }}
+{{- else }}
+{{- false }}
+{{- end }}
+{{- end }}
+
+{{/*
+Get APP_KEY secret name
+*/}}
+{{- define "bookstack.appKeySecretName" -}}
+{{- if .Values.bookstack.appKeySecret }}
+{{- .Values.bookstack.appKeySecret }}
+{{- else if .Values.bookstack.createAppKeySecret }}
+{{- printf "%s-app-key" (include "bookstack.fullname" .) }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}

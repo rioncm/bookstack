@@ -4,20 +4,44 @@ bookstack:
   # IMPORTANT: Generate your own APP_KEY using:
   # docker run -it --rm --entrypoint /bin/bash lscr.io/linuxserver/bookstack:latest appkey
   appKey: "base64:REPLACE_WITH_YOUR_GENERATED_KEY"
+  # Or use a secret (recommended for production):
+  # appKeySecret: "bookstack-app-key-secret"
+  # createAppKeySecret: true  # Will create secret from appKey value above
+  
   appUrl: "https://bookstack.yourdomain.com"
   puid: 1000
   pgid: 1000
   timezone: "America/New_York"
+  
+  # Example: Environment variables from secrets
+  extraEnvFrom:
+    - secretRef:
+        name: bookstack-extra-secrets  # Create this secret separately
+    # - configMapRef:
+    #     name: bookstack-config
+        
+  # Example: Additional individual environment variables
+  extraEnv:
+    - name: MAIL_DRIVER
+      value: "smtp"
+    - name: MAIL_HOST
+      valueFrom:
+        secretKeyRef:
+          name: bookstack-mail-secret
+          key: smtp-host
 
 database:
   host: "mysql.yourdomain.com"
   port: 3306
   name: "bookstack_prod"
   username: "bookstack_user"
-  password: "your_secure_password_here"
-  # Alternatively, use an existing secret:
-  # existingSecret: "bookstack-db-secret"
-  # existingSecretKey: "password"
+  # Option 1: Direct password (not recommended for production)
+  # password: "your_secure_password_here"
+  # Option 2: Use existing secret (recommended)
+  existingSecret: "bookstack-db-secret"
+  existingSecretKey: "password"
+  # Option 3: Let chart create secret from password value above
+  # password: "your_secure_password_here"  # Chart will create secret automatically
 
 persistence:
   enabled: true
